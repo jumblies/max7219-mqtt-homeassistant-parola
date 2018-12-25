@@ -6,6 +6,7 @@ TODO:  Quirky Display Code.  May need to implement a 24 hour reset timer to keep
 have it in MQTT code to allow resets */
 // uint16_t day_timer = 0;
 // Add 24 millis() code
+// Dropping segments was caused by flaky USB power supply in the island
 
 // Must set #define USE_GENERIC_HW 0 in the MD_Max82xx.h file
 #include <Arduino.h>
