@@ -45,7 +45,6 @@ bool newMessageAvailable = true;
 //Nonblocking MQTT PubSub Reconnet
 long lastReconnectAttempt;
 
-
 void callback(char *topic, byte *payload, unsigned int length)
 {
   payload[length] = '\0';
@@ -67,49 +66,74 @@ void callback(char *topic, byte *payload, unsigned int length)
   }
 }
 
-boolean reconnect()
-{//Reference for connect method 
-// boolean connect(const char* id, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage);
+// boolean reconnect()
+// { //Reference for connect method
+//   // boolean connect(const char* id, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage);
 
-  if (client.connect("Max-Race","MAX7219/LWT", /*QOS*/ 0, /*RETAIN*/1, /*WillMSG*/"Online"));
-  {
-    // Once connected, Subscribe to topics
-    client.subscribe(topic);
-    client.subscribe(topic2);
-    client.subscribe(topic3);
-  }
-  Serial.println("MQTT Connected");
-  return client.connected();
-}
+//   if (client.connect("Max-Race", "MAX7219/LWT", /*QOS*/ 0, /*RETAIN*/ 1, /*WillMSG*/ "Online"))
+//     ;
+//   {
+//     // Once connected, Subscribe to topics
+//     client.subscribe(topic);
+//     client.subscribe(topic2);
+//     client.subscribe(topic3);
+//   }
+//   Serial.println("MQTT Connected");
+//   return client.connected();
+// }
 
 // THIS HAS BEEN DEPRECATED IN FAVOR OF A NONBLOCKING MQTT LOOP
-// void reconnect()
-// {
-//   // Loop until we're reconnected
-//   while (!client.connected())
-//   {
-//     Serial.print("Attempting MQTT connection...");
-//     // Create a random client ID
-//     String clientId = "Max-Race";
-//     // clientId += String(random(0xffff), HEX);
-//     // Attempt to connect
-//     if (client.connect(clientId.c_str()))
-//     {
-//       Serial.println("connected");
-//       client.subscribe(topic);
-//       client.subscribe(topic2);
-//       client.subscribe(topic3);
-//     }
-//     else
-//     {
-//       Serial.print("failed, rc=");
-//       Serial.print(client.state());
-//       // Serial.println(" try again in 5 seconds");
-//       // Wait 5 seconds before retrying
-//       // delay(5000);
-//     }
-//   }
+void reconnect()
+{
+  // Loop until we're reconnected
+  while (!client.connected())
+  {
+    Serial.print("Attempting MQTT connection...");
+    // Create a random client ID
+    String clientId = "Max-Race";
+    // clientId += String(random(0xffff), HEX);
+    // Attempt to connect
+    if (client.connect(clientId.c_str()))
+    {
+      Serial.println("connected");
+      client.subscribe(topic);
+      client.subscribe(topic2);
+      client.subscribe(topic3);
+    }
+    else
+    {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      byte i;
+      for (i = 0; i < 3; i++)
+      {
 
+        Serial.println(" try again in 5 seconds");
+        // Wait 5 seconds before retrying
+        byte j;
+        for (j = 0; j < 5; j++)
+        {
+          Serial.print(3 - i);
+          Serial.print(" - ");
+          Serial.println(5 - j);
+          delay(1000);
+        }
+        // delay(5000);
+        if (client.connected())
+        {
+          break;
+        }
+      }
+      if (client.connected())
+      {
+        break;
+      }
+      else{
+      ESP.restart();
+      } 
+    }
+  }
+}
 void setup()
 {
   lastReconnectAttempt = 0;
@@ -148,22 +172,11 @@ void setup()
 void loop()
 {
   if (!client.connected())
-  { Serial.println("Entering NonBlocking Reconnect");
-    long now = millis();
-    if (now - lastReconnectAttempt > 5000)
-    {
-      lastReconnectAttempt = now;
-      // Attempt to reconnect
-      if (reconnect())
-      {
-        lastReconnectAttempt = 0;
-      }
-    }
-  }
-  else
   {
-    client.loop();
+    reconnect();
   }
+  client.loop();
+
   if (P.displayAnimate())
   {
     if (newMessageAvailable)
@@ -174,5 +187,4 @@ void loop()
     P.displayReset();
   }
   ArduinoOTA.handle();
-
 }
